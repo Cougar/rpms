@@ -1,14 +1,14 @@
-Alias /cricket/images   /usr/lib/cricket/www/images
-Alias /cricket          /usr/lib/cricket/www/cgi
+Alias /cricket/images   @imgdir@
+Alias /cricket          @cgidir@
 
-<Directory /usr/lib/cricket/www/cgi>
+<Directory @cgidir@>
     Options +ExecCGI
     Order Deny,Allow
     Deny from all
     Allow from localhost
 </Directory>
 
-<Directory /usr/lib/cricket/www/images>
+<Directory @imgdir@>
     Order Deny,Allow
     Deny from all
     Allow from localhost

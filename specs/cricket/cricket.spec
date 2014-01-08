@@ -2,32 +2,32 @@
 # $Id$
 
 %define version     1.0.5
-%define release     6.2
+%define release     6.2.20140108
 %define name        cricket
 %define httpd_user  apache
 
 # /usr/lib/cricket will be the "cricket home"
 #    - www/cgi will hold CGIs
 #    - www/images will hold images
-%define app_dir     %{_libdir}/%{name}/
-%define cgi_dir     %{app_dir}/www/cgi/
-%define img_dir     %{app_dir}/www/images/
+%define app_dir     %{_libdir}/%{name}
+%define cgi_dir     %{app_dir}/www/cgi
+%define img_dir     %{app_dir}/www/images
 
 # Cache graphs here; must be writable by web server!
-%define cache_dir   %{_var}/cache/%{name}/
+%define cache_dir   %{_var}/cache/%{name}
 
 # /var/lib/cricket/ will contain RRD data
-%define data_dir    %{_var}/lib/%{name}/
+%define data_dir    %{_var}/lib/%{name}
 
 # /var/log/cricket will contain logs (duh)
-%define log_dir     %{_var}/log/%{name}/
+%define log_dir     %{_var}/log/%{name}
 
 # /etc/cricket/config will be the default config tree
-%define etc_dir     %{_sysconfdir}/%{name}/
-%define config_dir  %{etc_dir}/config/
+%define etc_dir     %{_sysconfdir}/%{name}
+%define config_dir  %{etc_dir}/config
 
-%define cron_dir    %{_sysconfdir}/cron.d/
-%define httpd_dir   %{_sysconfdir}/httpd/conf.d/
+%define cron_dir    %{_sysconfdir}/cron.d
+%define httpd_dir   %{_sysconfdir}/httpd/conf.d
 
 
 Summary: Network statistics collection tool
@@ -87,13 +87,30 @@ interface to view graphs of the data.
 %{__install} -m 0664 cricket-conf.pl %{buildroot}/%{etc_dir}
 
 %{__install} -d -m 0771 %{buildroot}/%{config_dir}
-%{__install} -m 0660 sample-config/Defaults %{buildroot}%{config_dir}/
+%{__install} -m 0660 sample-config/Defaults %{buildroot}/%{config_dir}/
 
-%{__install} -D %{SOURCE1} %{buildroot}/%{cron_dir}/%{name}
+%{__install} -D -m 0644 %{SOURCE1} %{buildroot}/%{cron_dir}/%{name}
 
 %{__install} -D -m 0664 %{SOURCE2} \
     %{buildroot}/%{_sysconfdir}/httpd/conf.d/50_%{name}.conf
 
+for file in %{buildroot}/%{cron_dir}/%{name} %{buildroot}/%{_sysconfdir}/httpd/conf.d/50_%{name}.conf; do
+  sed -i -e's|@appdir@|%{app_dir}|g' \
+         -e's|@etcdir@|%{etc_dir}|g' \
+         -e's|@cachedir@|%{cache_dir}|g' \
+         -e's|@cgidir@|%{cgi_dir}|g' \
+         -e's|@imgdir@|%{img_dir}|g' \
+      $file
+done
+
+sed -i -e's|^\(\$gCricketHome = \).*$|\1"%{app_dir}";|g' \
+       -e's|^\(\$gConfigRoot = \).*$|\1"%{config_dir}";|g' \
+       -e's|^\(\$gCacheDir = \).*$|\1"%{cache_dir}";|g' \
+    %{buildroot}/%{etc_dir}/cricket-conf.pl
+
+sed -i -e's|^\(base:[ \t]\+\).*$|\1%{config_dir}|g' \
+       -e's|^\(logdir:[ \t]\+\).*$|\1%{log_dir}|g' \
+    %{buildroot}/%{etc_dir}/subtree-sets
 
 %clean
 %{__rm} -rf %{buildroot}
@@ -122,12 +139,17 @@ fi
 %doc CHANGES COPYING DEV-INFO README THANKS TODO VERSION doc sample-config
 
 %changelog
+* Wed Jan 08 2014 Cougar <cougar@random.ee> - 1.0.5-6.2.20140108
+- fixed crontab file permission
+- fixed library directory for x86_64 systems
+- replacing directory names in config files from ones defined in SPEC file
+
 * Wed Jul 08 2009 Christoph Maser <cmr@financial.com> - 1.0.5-6.2
 - fix previous fix
- 
+
 * Wed Jul 08 2009 Christoph Maser <cmr@financial.com> - 1.0.5-6.1
 - fix typo Requires: perl-SNMP_Session -> perl-SNMP-Session
- 
+
 * Wed Apr 06 2005 Wil Cooley <wcooley@nakedape.cc> - 1.0.5-6.nac.0.0
 - Patched mini-grapher.cgi to look in the right place for grapher.cgi.
 - Fixed scripts to not remove user on upgrade.
